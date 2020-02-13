@@ -31,6 +31,7 @@ class SnakeTest {
         assertEquals("#ff00ff", response["color"])
     }
 
+    /*
     @Test
     @Throws(IOException::class)
     internal fun moveTest() {
@@ -38,6 +39,7 @@ class SnakeTest {
         val response = handler.move(moveRequest)
         assertEquals("right", response["move"])
     }
+    */
 
     @Test
     @Throws(IOException::class)
