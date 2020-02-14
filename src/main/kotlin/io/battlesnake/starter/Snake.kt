@@ -195,10 +195,16 @@ object Snake : KLogging() {
                     ) {
                         return mapOf("move" to "left")
                     }
-                } else {
+                } else if (relativeX < 0) {
                     if (    !(bodyX.contains(headX + 1) && bodyY.contains(headY) &&
                                     bodyX.indexOf(headX + 1) == bodyY.indexOf(headY))) {
                         return mapOf("move" to "right")
+                    }
+                } else {
+                    if (relativeY > 0) {
+                        return mapOf("move" to "down")
+                    } else {
+                        return mapOf("move" to "up")
                     }
                 }
 
@@ -208,11 +214,17 @@ object Snake : KLogging() {
                     ) {
                         return mapOf("move" to "down")
                     }
-                } else {
+                } else if (relativeY < 0) {
                     if (    !(bodyX.contains(headX) && bodyY.contains(headY + 1) &&
                                     bodyX.indexOf(headX) == bodyY.indexOf(headY + 1))
                     ) {
                         return mapOf("move" to "up")
+                    }
+                } else {
+                    if (relativeX > 0) {
+                        return mapOf("move" to "left")
+                    } else {
+                        return mapOf("move" to "right")
                     }
                 }
             }
