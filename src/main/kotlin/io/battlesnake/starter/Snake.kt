@@ -52,6 +52,16 @@ object Snake : KLogging() {
      * Handler class for dealing with the routes set up in the main method.
      */
     class Handler {
+        private var bodyX = ArrayList<Int>()
+        private var bodyY = ArrayList<Int>()
+        private var bodyLength = 0
+        private var headX = 0
+        private var headY = 0
+        private var foodX = 0
+        private var foodY = 0
+        private var isThereFood = false
+        private var width = 0
+        private var height = 0
 
         /**
          * Generic processor that prints out the request and response from the methods.
@@ -99,6 +109,17 @@ object Snake : KLogging() {
          * @return a response back to the engine containing the snake setup values.
          */
         fun start(startRequest: JsonNode): Map<String, String> {
+            // Set the body length
+            bodyLength = 3
+            headX = startRequest.path("you").path("body").path("x").asInt()
+            headY = startRequest.path("you").path("body").path("y").asInt()
+
+            bodyX.add(headX)
+            bodyY.add(headY)
+
+            width = startRequest.path("board").path("width").asInt()
+            height = startRequest.path("board").path("height").asInt()
+
             return mapOf("color" to "#ff00ff", "headType" to "beluga", "tailType" to "bolt")
         }
 
@@ -109,12 +130,92 @@ object Snake : KLogging() {
          * @return a response back to the engine containing snake movement values.
          */
         fun move(moveRequest: JsonNode): Map<String, String> {
-            val turn = moveRequest.get("turn").asInt();
 
+            /*
+            val turn = moveRequest.get("turn").asInt();
             if (turn % 4 == 0) return mapOf("move" to "right")
             else if (turn % 4 == 1) return mapOf("move" to "down")
             else if (turn % 4 == 2) return mapOf("move" to "left")
             else if (turn % 4 == 3) return mapOf("move" to "up")
+            */
+
+            headX = moveRequest.path("you").path("x").asInt()
+            headY = moveRequest.path("you").path("y").asInt()
+
+            bodyX.add(0, headX)
+            bodyY.add(0, headY)
+
+            // Is there any food?
+            if (isAFoodExist(moveRequest)) {
+                // Did the snake get a food?
+                // If so, make it grows!
+                isFoodGot (moveRequest)
+            }
+
+            // Update the tale's place
+            if (bodyLength < bodyX.size) {
+                bodyX.remove(bodyLength)
+                bodyY.remove(bodyLength)
+            }
+
+            return seekFood(moveRequest)
+        }
+
+        fun isAFoodExist(moveRequest: JsonNode): Boolean {
+            if (!moveRequest.path("board").path("food").isNull) {
+                isThereFood = true
+
+                foodX = moveRequest.path("board").path("food").path("x").asInt()
+                foodY = moveRequest.path("board").path("food").path("x").asInt()
+
+                return true
+            }
+
+            return false
+        }
+
+        fun isFoodGot (moveRequest: JsonNode) {
+            if ((foodX == headX) && (foodY == headY)) {
+                bodyLength++
+                isThereFood = false
+            }
+        }
+
+        fun seekFood (moveRequest: JsonNode): Map<String, String> {
+            // If there is a food
+            if (isThereFood) {
+                var relativeX = headX - foodX
+                var relativeY = headY - foodY
+
+                // You don't have to worry about crashing a wall
+                // You need to worry about your body and other snakes
+                if (relativeX > 0) {
+                    if (    !(bodyX.contains(headX - 1) && bodyY.contains(headY) &&
+                            bodyX.indexOf(headX - 1) == bodyY.indexOf(headY))
+                    ) {
+                        return mapOf("move" to "left")
+                    }
+                } else {
+                    if (    !(bodyX.contains(headX + 1) && bodyY.contains(headY) &&
+                                    bodyX.indexOf(headX + 1) == bodyY.indexOf(headY))) {
+                        return mapOf("move" to "right")
+                    }
+                }
+
+                if (relativeY > 0) {
+                    if (    !(bodyX.contains(headX) && bodyY.contains(headY - 1) &&
+                                    bodyX.indexOf(headX) == bodyY.indexOf(headY - 1))
+                    ) {
+                        return mapOf("move" to "down")
+                    }
+                } else {
+                    if (    !(bodyX.contains(headX) && bodyY.contains(headY + 1) &&
+                                    bodyX.indexOf(headX) == bodyY.indexOf(headY + 1))
+                    ) {
+                        return mapOf("move" to "up")
+                    }
+                }
+            }
 
             return mapOf("move" to "right")
         }
