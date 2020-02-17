@@ -52,17 +52,6 @@ object Snake : KLogging() {
      * Handler class for dealing with the routes set up in the main method.
      */
     class Handler {
-        private var bodyX = ArrayList<Int>()
-        private var bodyY = ArrayList<Int>()
-        private var bodyLength = 0
-        private var headX = 0
-        private var headY = 0
-        private var foodX = 0
-        private var foodY = 0
-        private var isThereFood = false
-        private var width = 0
-        private var height = 0
-
         /**
          * Generic processor that prints out the request and response from the methods.
          *
@@ -93,6 +82,16 @@ object Snake : KLogging() {
         }
 
         /**
+         * /end is called by the engine when a game is complete.
+         *
+         * @param endRequest a map containing the JSON sent to this snake. See the spec for details of what this contains.
+         * @return responses back to the engine are ignored.
+         */
+        fun end(endRequest: JsonNode): Map<String, String> {
+            return emptyMap()
+        }
+
+        /**
          * /ping is called by the play application during the tournament or on play.battlesnake.io to make sure your
          * snake is still alive.
          *
@@ -102,6 +101,35 @@ object Snake : KLogging() {
             return emptyMap()
         }
 
+        private var bodyX = ArrayList<Int>()
+        private var bodyY = ArrayList<Int>()
+        private var bodyLength = 0
+        private var headX = 0
+        private var headY = 0
+        private var isThereFood = false
+        private var width = 0
+        private var height = 0
+        private var foodPositionX = ArrayList<Int>()
+        private var foodPositionY = ArrayList<Int>()
+        private var upX = 0
+        private var upY = 0
+        private var downX = 0
+        private var downY = 0
+        private var leftX = 0
+        private var leftY = 0
+        private var rightX = 0
+        private var rightY = 0
+
+        private var isUpChecked = false
+        private var isDownChecked = false
+        private var isRightChecked = false
+        private var isLeftChecked = false
+
+        private var isUpOK = false
+        private var isDownOK = false
+        private var isRightOK = false
+        private var isLeftOK = false
+
         /**
          * /start is called by the engine when a game is first run.
          *
@@ -109,18 +137,16 @@ object Snake : KLogging() {
          * @return a response back to the engine containing the snake setup values.
          */
         fun start(startRequest: JsonNode): Map<String, String> {
-            // Set the body length
-            bodyLength = 3
-            headX = startRequest["you"]["body"][0]["x"].asInt()
-            headY = startRequest["you"]["body"][0]["y"].asInt()
+            // Make a board
+            setBoard(startRequest)
 
-            bodyX.add(headX)
-            bodyY.add(headY)
+            // set snake body
+            setSnakeBody(startRequest)
 
-            width = startRequest["board"]["width"].asInt()
-            height = startRequest["board"]["height"].asInt()
+            // set food positions
+            setFoodPosition(startRequest)
 
-            return mapOf("color" to "#ff00ff", "headType" to "beluga", "tailType" to "bolt")
+            return mapOf("color" to "#00ff00", "headType" to "beluga", "tailType" to "bolt")
         }
 
         /**
@@ -130,116 +156,218 @@ object Snake : KLogging() {
          * @return a response back to the engine containing snake movement values.
          */
         fun move(moveRequest: JsonNode): Map<String, String> {
+            // initialized checking direction variables
+            initializedCheckDirections()
 
-            /*
-            val turn = moveRequest.get("turn").asInt();
-            if (turn % 4 == 0) return mapOf("move" to "right")
-            else if (turn % 4 == 1) return mapOf("move" to "down")
-            else if (turn % 4 == 2) return mapOf("move" to "left")
-            else if (turn % 4 == 3) return mapOf("move" to "up")
-            */
+            // set snake body
+            setSnakeBody(moveRequest)
 
-            headX = moveRequest["you"]["body"][0]["x"].asInt()
-            headY = moveRequest["you"]["body"][0]["y"].asInt()
+            // set food positions
+            setFoodPosition(moveRequest)
 
-            bodyX.add(0, headX)
-            bodyY.add(0, headY)
+            // check collisions
+            checkCollisions(moveRequest)
 
-            // Is there any food?
-            if (isAFoodExist(moveRequest)) {
-                // Did the snake get a food?
-                // If so, make it grows!
-                isFoodGot (moveRequest)
+            if (isThereFood) {
+                return seekFood(moveRequest)
             }
 
-            // Update the tale's place
-            if (bodyLength < bodyX.size) {
-                bodyX.remove(bodyX.size - 1)
-                bodyY.remove(bodyY.size - 1)
-            }
-
-            return seekFood(moveRequest)
+            return walkAround(moveRequest)
         }
 
-        fun isAFoodExist(moveRequest: JsonNode): Boolean {
-            if (moveRequest["board"]["food"].size() != 0) {
-                isThereFood = true
+        private fun seekFood (moveRequest: JsonNode): Map<String, String> {
+            var relativeX = headX - foodPositionX.get(0)
+            var relativeY = headY - foodPositionY.get(0)
 
-                foodX = moveRequest["board"]["food"][0]["x"].asInt()
-                foodY = moveRequest["board"]["food"][0]["y"].asInt()
+            // if food locates left
+            if (relativeX > 0) {
+                if (isLeftOK) {
+                        return mapOf("move" to "left")
+                }
+            } else if (relativeX == 0) {
+                if (relativeY > 0) {
+                    if (isUpOK) {
+                        return mapOf("move" to "up")
+                    }
+                } else if (relativeY < 0) {
+                    if (isDownOK) {
+                        return mapOf("move" to "down")
+                    }
+                }
+            } else {
+                if (isRightOK) {
+                    return mapOf("move" to "right")
+                }
+            }
 
+            if (relativeY > 0) {
+                if (isUpOK) {
+                    return mapOf("move" to "up")
+                }
+            } else if (relativeY == 0) {
+                if (relativeX > 0) {
+                    if (isLeftOK) {
+                        return mapOf("move" to "left")
+                    }
+                } else if (relativeX < 0)  {
+                    if (isRightOK) {
+                        return mapOf("move" to "right")
+                    }
+                }
+            } else {
+                if (isDownOK) {
+                    return mapOf("move" to "down")
+                }
+            }
+
+            // Return 'right' move anyway
+            // Improve this later
+            return mapOf("move" to "right")
+        }
+
+        private fun walkAround(moveRequest: JsonNode): Map<String, String> {
+            // Check up
+            if (isUpOK) {
+                return mapOf("move" to "up")
+            }
+
+            // Check down
+            if (isDownOK) {
+                return mapOf("move" to "down")
+            }
+
+            // Check right
+            if (isRightOK) {
+                return mapOf("move" to "right")
+            }
+
+            // Check left
+            if (isLeftOK) {
+                return mapOf("move" to "left")
+            }
+
+            return mapOf("move" to "right")
+        }
+
+        private fun checkCollisions (moveRequest: JsonNode) {
+
+            if (!isCollide(upX, upY)) {
+                isUpOK = true
+            }
+            isUpChecked = true
+
+            if (!isCollide(downX, downY)) {
+                isDownOK = true
+            }
+            isDownChecked = true
+
+            if (!isCollide(rightX, rightY)) {
+                isRightOK = true
+            }
+            isRightChecked = true
+
+            if (!isCollide(leftX, leftY)) {
+                isLeftOK = true
+            }
+            isLeftChecked = true
+        }
+
+        private fun isCollide (checkX:Int, checkY:Int): Boolean {
+            // Improve later to check enemy snakes body
+            return isSelfDestructive(checkX, checkY) && isWall(checkX, checkY)
+        }
+
+        private fun isSelfDestructive (checkX:Int, checkY:Int): Boolean {
+            for (i in 0..(bodyX.size - 1)) {
+                if (checkX == bodyX[i] && checkY == bodyY[i]) {
+                    return true
+                }
+            }
+
+            return false
+        }
+
+        private fun isWall (checkX:Int, checkY:Int): Boolean {
+            if (    checkX < 0 || checkX > width ||
+                    checkY < 0 || checkY > height) {
                 return true
             }
 
             return false
         }
 
-        fun isFoodGot (moveRequest: JsonNode) {
-            if ((foodX == headX) && (foodY == headY)) {
-                bodyLength++
+        private fun setFoodPosition(moveRequest: JsonNode) {
+            if (moveRequest["board"]["food"].size() != 0) {
+                isThereFood = true
+
+                // clear food positions
+                foodPositionX.clear()
+                foodPositionY.clear()
+
+                for (i in 0..(moveRequest["board"]["food"].size() - 1)) {
+                    foodPositionX.add(moveRequest["board"]["food"][i]["x"].asInt())
+                    foodPositionY.add(moveRequest["board"]["food"][i]["y"].asInt())
+                }
+            } else {
                 isThereFood = false
             }
         }
 
-        fun seekFood (moveRequest: JsonNode): Map<String, String> {
-            // If there is a food
-            if (isThereFood) {
-                var relativeX = headX - foodX
-                var relativeY = headY - foodY
+        private fun setBoard(moveRequest: JsonNode) {
+            width = moveRequest["board"]["width"].asInt()
+            height = moveRequest["board"]["height"].asInt()
+        }
 
-                // You don't have to worry about crashing a wall
-                // You need to worry about your body and other snakes
-                if (relativeX > 0) {
-                    if (    !(bodyX.contains(headX - 1) && bodyY.contains(headY) &&
-                            bodyX.indexOf(headX - 1) == bodyY.indexOf(headY))
-                    ) {
-                        return mapOf("move" to "left")
-                    }
-                } else if (relativeX < 0) {
-                    if (    !(bodyX.contains(headX + 1) && bodyY.contains(headY) &&
-                                    bodyX.indexOf(headX + 1) == bodyY.indexOf(headY))) {
-                        return mapOf("move" to "right")
-                    }
-                } else {
-                    if (relativeY > 0) {
-                        return mapOf("move" to "up")
-                    } else {
-                        return mapOf("move" to "down")
-                    }
-                }
+        private fun setSnakeBody(moveRequest: JsonNode) {
+            bodyX.clear()
+            bodyY.clear()
 
-                if (relativeY > 0) {
-                    if (    !(bodyX.contains(headX) && bodyY.contains(headY - 1) &&
-                                    bodyX.indexOf(headX) == bodyY.indexOf(headY - 1))
-                    ) {
-                        return mapOf("move" to "down")
-                    }
-                } else if (relativeY < 0) {
-                    if (    !(bodyX.contains(headX) && bodyY.contains(headY + 1) &&
-                                    bodyX.indexOf(headX) == bodyY.indexOf(headY + 1))
-                    ) {
-                        return mapOf("move" to "up")
-                    }
-                } else {
-                    if (relativeX > 0) {
-                        return mapOf("move" to "left")
-                    } else {
-                        return mapOf("move" to "right")
-                    }
-                }
+            for (i in 0..moveRequest["you"]["body"].size() - 1) {
+                bodyX.add(moveRequest["you"]["body"][i]["x"].asInt())
+                bodyY.add(moveRequest["you"]["body"][i]["y"].asInt())
             }
 
-            return mapOf("move" to "right")
+            // set head
+            headX = moveRequest["you"]["body"][0]["x"].asInt()
+            headY = moveRequest["you"]["body"][0]["y"].asInt()
+
+            // set UpRightDownLeft
+            setUpRightDownLeft()
+
+            // set body length
+            bodyLength = bodyX.size
         }
 
-        /**
-         * /end is called by the engine when a game is complete.
-         *
-         * @param endRequest a map containing the JSON sent to this snake. See the spec for details of what this contains.
-         * @return responses back to the engine are ignored.
-         */
-        fun end(endRequest: JsonNode): Map<String, String> {
-            return emptyMap()
+        private fun setUpRightDownLeft() {
+            // set up
+            upX = headX
+            upY = headY - 1
+
+            // set down
+            downX = headX
+            downY = headY + 1
+
+            // set left
+            leftX = headX - 1
+            leftY = headY
+
+            // set right
+            rightX = headX + 1
+            rightY = headY
         }
+
+        private fun initializedCheckDirections() {
+            isUpChecked = false
+            isDownChecked = false
+            isRightChecked = false
+            isLeftChecked = false
+
+            isUpOK = false
+            isDownOK = false
+            isRightOK = false
+            isLeftOK = false
+        }
+
+
     }
 }
