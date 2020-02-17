@@ -106,13 +106,19 @@ object Snake : KLogging() {
         private var bodyLength = 0
         private var headX = 0
         private var headY = 0
-        private var foodX = 0
-        private var foodY = 0
         private var isThereFood = false
         private var width = 0
         private var height = 0
         private var foodPositionX = ArrayList<Int>()
         private var foodPositionY = ArrayList<Int>()
+        private var upX = 0
+        private var upY = 0
+        private var downX = 0
+        private var downY = 0
+        private var leftX = 0
+        private var leftY = 0
+        private var rightX = 0
+        private var rightY = 0
 
         /**
          * /start is called by the engine when a game is first run.
@@ -155,50 +161,47 @@ object Snake : KLogging() {
         }
 
         private fun seekFood (moveRequest: JsonNode): Map<String, String> {
-            // If there is a food
-            if (isThereFood) {
-                var relativeX = headX - foodPositionX.get(0)
-                var relativeY = headY - foodPositionY.get(0)
+            var relativeX = headX - foodPositionX.get(0)
+            var relativeY = headY - foodPositionY.get(0)
 
-                // You don't have to worry about crashing a wall here
-                // You need to worry about your body and other snakes
-                if (relativeX > 0) {
-                    if (isCollide(headX - 1, headY)) {
-                            return mapOf("move" to "left")
-                    }
-                } else if (relativeX < 0) {
-                    if (!isCollide(headX + 1, headY)) {
-                        return mapOf("move" to "right")
-                    }
-                } else {
-                    if (relativeY > 0) {
-                        if (!isCollide(headX, headY - 1)) {
-                            return mapOf("move" to "up")
-                        }
-                    } else {
-                        if (!isCollide(headX, headY + 1)) {
-                            return mapOf("move" to "down")
-                        }
-                    }
+
+            // if food locates left
+            if (relativeX > 0) {
+                if (isCollide(leftX, leftY)) {
+                        return mapOf("move" to "left")
                 }
-
+            } else if (relativeX < 0) {
+                if (!isCollide(rightX, rightY)) {
+                    return mapOf("move" to "right")
+                }
+            } else {
                 if (relativeY > 0) {
-                    if (!isCollide(headX, headY + 1)) {
-                        return mapOf("move" to "down")
-                    }
-                } else if (relativeY < 0) {
-                    if (!isCollide(headX, headY - 1)) {
+                    if (!isCollide(upX, upY)) {
                         return mapOf("move" to "up")
                     }
-                } else {
-                    if (relativeX > 0) {
-                        if (!isCollide(headX - 1, headY)) {
-                            return mapOf("move" to "left")
-                        }
-                    } else {
-                        if (!isCollide(headX + 1, headY)) {
-                            return mapOf("move" to "right")
-                        }
+                } else if (relativeY < 0) {
+                    if (!isCollide(downX, downY)) {
+                        return mapOf("move" to "down")
+                    }
+                }
+            }
+
+            if (relativeY > 0) {
+                if (!isCollide(downX, downY)) {
+                    return mapOf("move" to "down")
+                }
+            } else if (relativeY < 0) {
+                if (!isCollide(upX, upY)) {
+                    return mapOf("move" to "up")
+                }
+            } else {
+                if (relativeX > 0) {
+                    if (!isCollide(leftX, leftY)) {
+                        return mapOf("move" to "left")
+                    }
+                } else if (relativeX < 0)  {
+                    if (!isCollide(rightX, rightY)) {
+                        return mapOf("move" to "right")
                     }
                 }
             }
@@ -210,22 +213,22 @@ object Snake : KLogging() {
 
         private fun walkAround(moveRequest: JsonNode): Map<String, String> {
             // Check up
-            if (!isCollide(headX, headY - 1)) {
+            if (!isCollide(upX, upY)) {
                 return mapOf("move" to "up")
             }
 
             // Check down
-            if (!isCollide(headX, headY + 1)) {
-                return mapOf("move" to "up")
+            if (!isCollide(downX, downY)) {
+                return mapOf("move" to "down")
             }
 
             // Check right
-            if (!isCollide(headX + 1, headY)) {
+            if (!isCollide(rightX, rightY)) {
                 return mapOf("move" to "right")
             }
 
             // Check left
-            if (!isCollide(headX + 1, headY)) {
+            if (!isCollide(leftX, leftY)) {
                 return mapOf("move" to "left")
             }
 
@@ -287,12 +290,33 @@ object Snake : KLogging() {
                 bodyY.add(moveRequest["you"]["body"][i]["y"].asInt())
             }
 
+            // set head
             headX = moveRequest["you"]["body"][0]["x"].asInt()
             headY = moveRequest["you"]["body"][0]["y"].asInt()
+
+            // set UpRightDownLeft
+            setUpRightDownLeft()
 
             // set body length
             bodyLength = bodyX.size
         }
 
+        private fun setUpRightDownLeft() {
+            // set up
+            upX = headX
+            upY = headY - 1
+
+            // set down
+            downX = headX
+            downY = headY + 1
+
+            // set left
+            leftX = headX - 1
+            leftY = headY
+
+            // set right
+            rightX = headX + 1
+            rightY = headY
+        }
     }
 }
