@@ -120,6 +120,16 @@ object Snake : KLogging() {
         private var rightX = 0
         private var rightY = 0
 
+        private var isUpChecked = false
+        private var isDownChecked = false
+        private var isRightChecked = false
+        private var isLeftChecked = false
+
+        private var isUpOK = false
+        private var isDownOK = false
+        private var isRightOK = false
+        private var isLeftOK = false
+
         /**
          * /start is called by the engine when a game is first run.
          *
@@ -146,12 +156,17 @@ object Snake : KLogging() {
          * @return a response back to the engine containing snake movement values.
          */
         fun move(moveRequest: JsonNode): Map<String, String> {
+            // initialized checking direction variables
+            initializedCheckDirections()
 
             // set snake body
             setSnakeBody(moveRequest)
 
             // set food positions
             setFoodPosition(moveRequest)
+
+            // check collisions
+            checkCollisions(moveRequest)
 
             if (isThereFood) {
                 return seekFood(moveRequest)
@@ -164,47 +179,44 @@ object Snake : KLogging() {
             var relativeX = headX - foodPositionX.get(0)
             var relativeY = headY - foodPositionY.get(0)
 
-            println(relativeX)
-            println(relativeY)
-
             // if food locates left
             if (relativeX > 0) {
-                if (isCollide(leftX, leftY)) {
+                if (isLeftOK) {
                         return mapOf("move" to "left")
                 }
-            } else if (relativeX < 0) {
-                if (!isCollide(rightX, rightY)) {
-                    return mapOf("move" to "right")
-                }
-            } else {
+            } else if (relativeX == 0) {
                 if (relativeY > 0) {
-                    if (!isCollide(upX, upY)) {
+                    if (isUpOK) {
                         return mapOf("move" to "up")
                     }
                 } else if (relativeY < 0) {
-                    if (!isCollide(downX, downY)) {
+                    if (isDownOK) {
                         return mapOf("move" to "down")
                     }
+                }
+            } else {
+                if (isRightOK) {
+                    return mapOf("move" to "right")
                 }
             }
 
             if (relativeY > 0) {
-                if (!isCollide(upX, upY)) {
+                if (isUpOK) {
                     return mapOf("move" to "up")
                 }
-            } else if (relativeY < 0) {
-                if (!isCollide(downX, downY)) {
-                    return mapOf("move" to "down")
-                }
-            } else {
+            } else if (relativeY == 0) {
                 if (relativeX > 0) {
-                    if (!isCollide(leftX, leftY)) {
+                    if (isLeftOK) {
                         return mapOf("move" to "left")
                     }
                 } else if (relativeX < 0)  {
-                    if (!isCollide(rightX, rightY)) {
+                    if (isRightOK) {
                         return mapOf("move" to "right")
                     }
+                }
+            } else {
+                if (isDownOK) {
+                    return mapOf("move" to "down")
                 }
             }
 
@@ -215,26 +227,49 @@ object Snake : KLogging() {
 
         private fun walkAround(moveRequest: JsonNode): Map<String, String> {
             // Check up
-            if (!isCollide(upX, upY)) {
+            if (isUpOK) {
                 return mapOf("move" to "up")
             }
 
             // Check down
-            if (!isCollide(downX, downY)) {
+            if (isDownOK) {
                 return mapOf("move" to "down")
             }
 
             // Check right
-            if (!isCollide(rightX, rightY)) {
+            if (isRightOK) {
                 return mapOf("move" to "right")
             }
 
             // Check left
-            if (!isCollide(leftX, leftY)) {
+            if (isLeftOK) {
                 return mapOf("move" to "left")
             }
 
             return mapOf("move" to "right")
+        }
+
+        private fun checkCollisions (moveRequest: JsonNode) {
+
+            if (!isCollide(upX, upY)) {
+                isUpOK = true
+            }
+            isUpChecked = true
+
+            if (!isCollide(downX, downY)) {
+                isDownOK = true
+            }
+            isDownChecked = true
+
+            if (!isCollide(rightX, rightY)) {
+                isRightOK = true
+            }
+            isRightChecked = true
+
+            if (!isCollide(leftX, leftY)) {
+                isLeftOK = true
+            }
+            isLeftChecked = true
         }
 
         private fun isCollide (checkX:Int, checkY:Int): Boolean {
@@ -320,5 +355,19 @@ object Snake : KLogging() {
             rightX = headX + 1
             rightY = headY
         }
+
+        private fun initializedCheckDirections() {
+            isUpChecked = false
+            isDownChecked = false
+            isRightChecked = false
+            isLeftChecked = false
+
+            isUpOK = false
+            isDownOK = false
+            isRightOK = false
+            isLeftOK = false
+        }
+
+
     }
 }
