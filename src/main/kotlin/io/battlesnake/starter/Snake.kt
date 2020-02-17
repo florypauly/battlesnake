@@ -164,6 +164,8 @@ object Snake : KLogging() {
             var relativeX = headX - foodPositionX.get(0)
             var relativeY = headY - foodPositionY.get(0)
 
+            println(relativeX)
+            println(relativeY)
 
             // if food locates left
             if (relativeX > 0) {
@@ -187,12 +189,12 @@ object Snake : KLogging() {
             }
 
             if (relativeY > 0) {
-                if (!isCollide(downX, downY)) {
-                    return mapOf("move" to "down")
-                }
-            } else if (relativeY < 0) {
                 if (!isCollide(upX, upY)) {
                     return mapOf("move" to "up")
+                }
+            } else if (relativeY < 0) {
+                if (!isCollide(downX, downY)) {
+                    return mapOf("move" to "down")
                 }
             } else {
                 if (relativeX > 0) {
