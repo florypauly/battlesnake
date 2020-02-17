@@ -130,7 +130,7 @@ object Snake : KLogging() {
             // set food positions
             setFoodPosition(startRequest)
 
-            return mapOf("color" to "#ff00ff", "headType" to "beluga", "tailType" to "bolt")
+            return mapOf("color" to "#00ff00", "headType" to "beluga", "tailType" to "bolt")
         }
 
         /**
@@ -163,55 +163,40 @@ object Snake : KLogging() {
                 // You don't have to worry about crashing a wall here
                 // You need to worry about your body and other snakes
                 if (relativeX > 0) {
-                    if (    !(bodyX.contains(headX - 1) && bodyY.contains(headY) &&
-                                    bodyX.indexOf(headX - 1) == bodyY.indexOf(headY))) {
-
-                        if (!isSelfDestructive(headX - 1, headY)) {
+                    if (isCollide(headX - 1, headY)) {
                             return mapOf("move" to "left")
-                        }
                     }
                 } else if (relativeX < 0) {
-                    if (    !(bodyX.contains(headX + 1) && bodyY.contains(headY) &&
-                                    bodyX.indexOf(headX + 1) == bodyY.indexOf(headY))) {
-
-                        if (!isSelfDestructive(headX + 1, headY)) {
-                            return mapOf("move" to "right")
-                        }
+                    if (!isCollide(headX + 1, headY)) {
+                        return mapOf("move" to "right")
                     }
                 } else {
                     if (relativeY > 0) {
-                        if (!isSelfDestructive(headX, headY - 1)) {
+                        if (!isCollide(headX, headY - 1)) {
                             return mapOf("move" to "up")
                         }
                     } else {
-                        if (!isSelfDestructive(headX, headY + 1)) {
+                        if (!isCollide(headX, headY + 1)) {
                             return mapOf("move" to "down")
                         }
                     }
                 }
 
                 if (relativeY > 0) {
-                    if (    !(bodyX.contains(headX) && bodyY.contains(headY - 1) &&
-                                    bodyX.indexOf(headX) == bodyY.indexOf(headY - 1))) {
-
-                        if (!isSelfDestructive(headX, headY + 1)) {
-                            return mapOf("move" to "down")
-                        }
+                    if (!isCollide(headX, headY + 1)) {
+                        return mapOf("move" to "down")
                     }
                 } else if (relativeY < 0) {
-                    if (    !(bodyX.contains(headX) && bodyY.contains(headY + 1) &&
-                                    bodyX.indexOf(headX) == bodyY.indexOf(headY + 1))) {
-                        if (!isSelfDestructive(headX, headY - 1)) {
-                            return mapOf("move" to "up")
-                        }
+                    if (!isCollide(headX, headY - 1)) {
+                        return mapOf("move" to "up")
                     }
                 } else {
                     if (relativeX > 0) {
-                        if (!isSelfDestructive(headX - 1, headY)) {
+                        if (!isCollide(headX - 1, headY)) {
                             return mapOf("move" to "left")
                         }
                     } else {
-                        if (!isSelfDestructive(headX + 1, headY)) {
+                        if (!isCollide(headX + 1, headY)) {
                             return mapOf("move" to "right")
                         }
                     }
@@ -225,26 +210,31 @@ object Snake : KLogging() {
 
         private fun walkAround(moveRequest: JsonNode): Map<String, String> {
             // Check up
-            if (!isSelfDestructive (headX, headY - 1) && !isWall(headX, headY - 1)) {
+            if (!isCollide(headX, headY - 1)) {
                 return mapOf("move" to "up")
             }
 
             // Check down
-            if (!isSelfDestructive (headX, headY + 1) && !isWall(headX, headY + 1)) {
+            if (!isCollide(headX, headY + 1)) {
                 return mapOf("move" to "up")
             }
 
             // Check right
-            if (!isSelfDestructive (headX + 1, headY) && !isWall(headX + 1, headY)) {
+            if (!isCollide(headX + 1, headY)) {
                 return mapOf("move" to "right")
             }
 
             // Check left
-            if (!isSelfDestructive (headX + 1, headY) && !isWall(headX + 1, headY)) {
+            if (!isCollide(headX + 1, headY)) {
                 return mapOf("move" to "left")
             }
 
             return mapOf("move" to "right")
+        }
+
+        private fun isCollide (checkX:Int, checkY:Int): Boolean {
+            // Improve later to check enemy snakes body
+            return isSelfDestructive(checkX, checkY) || isWall(checkX, checkY)
         }
 
         private fun isSelfDestructive (checkX:Int, checkY:Int): Boolean {
