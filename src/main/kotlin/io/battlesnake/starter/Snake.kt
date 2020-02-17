@@ -111,14 +111,14 @@ object Snake : KLogging() {
         fun start(startRequest: JsonNode): Map<String, String> {
             // Set the body length
             bodyLength = 3
-            headX = startRequest.path("you").path("body").path("x").asInt()
-            headY = startRequest.path("you").path("body").path("y").asInt()
+            headX = startRequest["you"]["body"][0]["x"].asInt()
+            headY = startRequest["you"]["body"][0]["y"].asInt()
 
             bodyX.add(headX)
             bodyY.add(headY)
 
-            width = startRequest.path("board").path("width").asInt()
-            height = startRequest.path("board").path("height").asInt()
+            width = startRequest["board"]["width"].asInt()
+            height = startRequest["board"]["height"].asInt()
 
             return mapOf("color" to "#ff00ff", "headType" to "beluga", "tailType" to "bolt")
         }
@@ -139,8 +139,8 @@ object Snake : KLogging() {
             else if (turn % 4 == 3) return mapOf("move" to "up")
             */
 
-            headX = moveRequest.path("you").path("x").asInt()
-            headY = moveRequest.path("you").path("y").asInt()
+            headX = moveRequest["you"]["body"][0]["x"].asInt()
+            headY = moveRequest["you"]["body"][0]["y"].asInt()
 
             bodyX.add(0, headX)
             bodyY.add(0, headY)
@@ -154,19 +154,19 @@ object Snake : KLogging() {
 
             // Update the tale's place
             if (bodyLength < bodyX.size) {
-                bodyX.remove(bodyLength)
-                bodyY.remove(bodyLength)
+                bodyX.remove(bodyX.size - 1)
+                bodyY.remove(bodyY.size - 1)
             }
 
             return seekFood(moveRequest)
         }
 
         fun isAFoodExist(moveRequest: JsonNode): Boolean {
-            if (!moveRequest.path("board").path("food").isNull) {
+            if (moveRequest["board"]["food"].size() != 0) {
                 isThereFood = true
 
-                foodX = moveRequest.path("board").path("food").path("x").asInt()
-                foodY = moveRequest.path("board").path("food").path("x").asInt()
+                foodX = moveRequest["board"]["food"][0]["x"].asInt()
+                foodY = moveRequest["board"]["food"][0]["y"].asInt()
 
                 return true
             }
@@ -202,9 +202,9 @@ object Snake : KLogging() {
                     }
                 } else {
                     if (relativeY > 0) {
-                        return mapOf("move" to "down")
-                    } else {
                         return mapOf("move" to "up")
+                    } else {
+                        return mapOf("move" to "down")
                     }
                 }
 
