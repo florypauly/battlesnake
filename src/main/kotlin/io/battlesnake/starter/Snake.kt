@@ -202,9 +202,9 @@ object Snake : KLogging() {
                     }
                 } else {
                     if (relativeY > 0) {
-                        return mapOf("move" to "down")
-                    } else {
                         return mapOf("move" to "up")
+                    } else {
+                        return mapOf("move" to "down")
                     }
                 }
 
