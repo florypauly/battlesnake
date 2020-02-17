@@ -23,6 +23,7 @@ class SnakeTest {
         assertEquals("{}", response.toString())
     }
 
+    /*
     @Test
     @Throws(IOException::class)
     internal fun startTest() {
@@ -30,6 +31,7 @@ class SnakeTest {
         val response = handler.start(startRequest)
         assertEquals("#ff00ff", response["color"])
     }
+    */
 
     /*
     @Test
