@@ -157,10 +157,10 @@ object Snake : KLogging() {
         private fun seekFood (moveRequest: JsonNode): Map<String, String> {
             // If there is a food
             if (isThereFood) {
-                var relativeX = headX - foodX
-                var relativeY = headY - foodY
+                var relativeX = headX - foodPositionX.get(0)
+                var relativeY = headY - foodPositionY.get(0)
 
-                // You don't have to worry about crashing a wall
+                // You don't have to worry about crashing a wall here
                 // You need to worry about your body and other snakes
                 if (relativeX > 0) {
                     if (    !(bodyX.contains(headX - 1) && bodyY.contains(headY) &&
@@ -250,7 +250,7 @@ object Snake : KLogging() {
         private fun isSelfDestructive (checkX:Int, checkY:Int): Boolean {
             for (i in 0..(bodyX.size - 1)) {
                 if (checkX == bodyX[i] && checkY == bodyY[i]) {
-                    return true;
+                    return true
                 }
             }
 
@@ -270,6 +270,10 @@ object Snake : KLogging() {
             if (moveRequest["board"]["food"].size() != 0) {
                 isThereFood = true
 
+                // clear food positions
+                foodPositionX.clear()
+                foodPositionY.clear()
+
                 for (i in 0..(moveRequest["board"]["food"].size() - 1)) {
                     foodPositionX.add(moveRequest["board"]["food"][i]["x"].asInt())
                     foodPositionY.add(moveRequest["board"]["food"][i]["y"].asInt())
@@ -288,7 +292,7 @@ object Snake : KLogging() {
             bodyX.clear()
             bodyY.clear()
 
-            for (i in 0..(moveRequest["you"]["body"].size() - 1)) {
+            for (i in 0..moveRequest["you"]["body"].size() - 1) {
                 bodyX.add(moveRequest["you"]["body"][i]["x"].asInt())
                 bodyY.add(moveRequest["you"]["body"][i]["y"].asInt())
             }
