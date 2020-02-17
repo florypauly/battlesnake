@@ -237,7 +237,7 @@ object Snake : KLogging() {
 
         private fun isCollide (checkX:Int, checkY:Int): Boolean {
             // Improve later to check enemy snakes body
-            return isSelfDestructive(checkX, checkY) || isWall(checkX, checkY)
+            return isSelfDestructive(checkX, checkY) && isWall(checkX, checkY)
         }
 
         private fun isSelfDestructive (checkX:Int, checkY:Int): Boolean {
