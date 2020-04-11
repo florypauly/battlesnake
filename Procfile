@@ -1,1 +1,1 @@
-web: java -DPORT=$PORT -jar build/libs/starter-snake-kotlin.jar
+web: java -DPORT=$PORT -jar target/starter-snake-java.jar
